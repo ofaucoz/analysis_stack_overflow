@@ -78,8 +78,8 @@ def degree_log(graph):
 
 	# draw graph in inset
 	plt.axes([0.45,0.45,0.45,0.45])
-	Gcc=sorted(nx.connected_component_subgraphs(graph), key = len, reverse=True)[0]
-	pos=nx.spring_layout(Gcc)
+	Gcc = sorted(nx.connected_component_subgraphs(graph), key = len, reverse=True)[0]
+	pos = nx.spring_layout(Gcc)
 	plt.axis('off')
 	nx.draw_networkx_nodes(Gcc,pos,node_size=20)
 	nx.draw_networkx_edges(Gcc,pos,alpha=0.4)
@@ -87,10 +87,46 @@ def degree_log(graph):
 	plt.savefig("degree_histogram.png")
 	plt.show()
 
+def centrality_degree(G):
+	degree_centrality = sorted(nx.degree_centrality(G).values(), reverse=True)
+	pagerank = nx.pagerank(G)
+	plt.loglog(degree_centrality,'b-',marker='o')
+	plt.title("Distribution of nodes centrality")
+	plt.ylabel("fraction")
+	plt.xlabel("centrality")
+	plt.savefig("centrality_nodes_histogram.png")
+	plt.show()
+	print "degree centrality : " + str(degree_centrality)
+
+def closeness_centrality(G):
+	closeness_centrality = nx.closeness_centrality(G)
+	print closeness_centrality
+	print "best nodes : " + str(sorted(closeness_centrality.values())[:5])
+	plt.bar(list(closeness_centrality.keys()), list(closeness_centrality.values()), color='g')
+	plt.show()
+
+def betweeness_centrality(G):
+	betweeness_centrality = nx.betweenness_centrality(G)
+	print betweeness_centrality
+	print "best nodes : " + str(sorted(betweeness_centrality.values(), reverse=True)[:5])
+	plt.bar(list(betweeness_centrality.keys()), list(betweeness_centrality.values()), color='g')
+	plt.show()
+
+def eigenvector_centrality(G):
+	eigenvector_centrality = nx.eigenvector_centrality(G)
+	print eigenvector_centrality
+	print "best nodes : " + str(sorted(eigenvector_centrality.values(), reverse=True)[:5])
+	plt.bar(list(eigenvector_centrality.keys()), list(eigenvector_centrality.values()), color='g')
+	plt.show()
+
 
 graph = create_graph()
 #plot_graph(graph)
 #print "compute_average_path : " + str(compute_average_path(graph))
 #print "degree_distribution : " + str(degree_distribution(graph))
-degree_log(graph)
+#degree_log(graph)
+#centrality_degree(graph)
+#closeness_centrality(graph)
+#betweeness_centrality(graph)
+eigenvector_centrality(graph)
 

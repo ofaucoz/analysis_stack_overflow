@@ -1,1 +1,3 @@
+# Not minding every png and csv files (results, datasets)
 *.csv
+*.png
