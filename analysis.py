@@ -98,11 +98,26 @@ def degree_log(graph):
 
 def communities(G):
 	partition = community.best_partition(G)
-	float(len(set(partition.values())))
-	list_modularity = list()
-	for part in set(partition.values()):
-		list_modularity.append(community.modularity(part, G))
-	return sorted(list_modularity)[10]
+	#drawing
+	size = float(len(set(partition.values())))
+	print "size : " + str(size)
+	pos = nx.spring_layout(G)
+	count = 0.
+	dict_count = {}
+	for	com	in set(partition.values()) : 
+		count = count + 1.
+		list_nodes = [nodes	for	nodes in partition.keys() if partition[nodes] == com]
+		dict_count[com] = len(list_nodes)
+		nx.draw_networkx_nodes(G, pos, list_nodes, node_size = 20, node_color = str(count / size))
+	nx.draw_networkx_edges(G, pos, alpha=0.5)
+	print dict_count
+	plt.savefig("community_repartition.png")
+	plt.show()
+	#float(len(set(partition.values())))
+	#list_modularity = list()
+	#for part in set(partition.values()):
+	#	list_modularity.append(community.modularity(part, G))
+	#return sorted(list_modularity)[10]
 
 def centrality_degree(G):
 	degree_centrality = sorted(nx.degree_centrality(G).values(), reverse=True)
@@ -173,6 +188,7 @@ graph = graph.to_undirected()
 #print "compute_average_path : " + str(compute_average_path(graph)) # result : 3
 #print "degree_distribution : " + str(degree_distribution(graph))
 #degree_log(graph)
+communities(graph)
 #print communities(graph) : 268 communities, but with 2 particular ones
 #centrality_degree(graph)
 #closeness_centrality(graph)
