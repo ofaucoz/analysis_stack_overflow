@@ -1,28 +1,29 @@
 #!/usr/bin/python
 
+import community
 import networkx as nx
 import matplotlib.pyplot as plt
-import pandas as pd
+
 
 def create_graph():
-	graph = nx.Graph(day="stack-overflow")
+	#graph = nx.Graph(day="stack-overflow")
 
 	# get nodes and edges
-	nodes = pd.read_csv('stack_network_nodes.csv')
-	edges = pd.read_csv('stack_network_links.csv')
+	graph = nx.read_gml('polblogs.gml')
+	# edges = pd.read_csv('stack_network_links.csv')
 
-	# retrieve nodes and edges into graph
-	for index, row in nodes.iterrows():
-	    graph.add_node(row['name'], group=row['group'], nodesize=row['nodesize'])
+	# # retrieve nodes and edges into graph
+	# for index, row in nodes.iterrows():
+	#     graph.add_node(row['name'], group=row['group'], nodesize=row['nodesize'])
 
-	for index, row in edges.iterrows():
-	    graph.add_weighted_edges_from([(row['source'], row['target'], row['value'])])
+	# for index, row in edges.iterrows():
+	#     graph.add_weighted_edges_from([(row['source'], row['target'], row['value'])])
 	return graph
 
 def plot_graph(graph):
-	color_map = {1:'#f09494', 2:'#eebcbc', 3:'#72bbd0', 4:'#91f0a1', 5:'#629fff', 6:'#bcc2f2',
-	             7:'#eebcbc', 8:'#f1f0c0', 9:'#d2ffe7', 10:'#caf3a6', 11:'#ffdf55', 12:'#ef77aa',
-	             13:'#d6dcff', 14:'#d2f5f0'}
+	# color_map = {1:'#f09494', 2:'#eebcbc', 3:'#72bbd0', 4:'#91f0a1', 5:'#629fff', 6:'#bcc2f2',
+	#              7:'#eebcbc', 8:'#f1f0c0', 9:'#d2ffe7', 10:'#caf3a6', 11:'#ffdf55', 12:'#ef77aa',
+	#              13:'#d6dcff', 14:'#d2f5f0'}
 
 	plt.figure(figsize=(25,25))
 	options = {
@@ -32,23 +33,35 @@ def plot_graph(graph):
 	    'font_weight': 'regular',
 	}
 
-	colors = [color_map[graph.node[node]['group']] for node in graph]
-	sizes = [graph.node[node]['nodesize']*9 for node in graph]
+	#colors = [color_map[graph.node[node]['group']] for node in graph]
+	#sizes = [graph.node[node]['nodesize']*9 for node in graph]
 
-	nx.draw(graph, node_color=colors, node_size=sizes, pos=nx.spring_layout(graph, k=1, iterations=100),
+	nx.draw(graph, pos=nx.spring_layout(graph, k=1, iterations=100),
 		node_shape="p", alpha=0.8, **options)
 	ax = plt.gca()
 	ax.collections[0].set_edgecolor("#444444")
 	plt.show()
 
+def distance_measures(G):
+	print "center : " + str(nx.center(G)) + ", diameter : " + str(nx.diamter(G)) + ", eccentricity : " + str()
+
 def compute_average_path(graph):
 	spl = nx.all_pairs_shortest_path_length(graph)
+	flag = True
+	current_node = spl.next()
 	number_edges = 0
 	sum = 0
-	for node1 in spl:
-		for node2 in dict(spl[node1]):
+	while(flag != False):	
+		node = current_node[0]
+		#print "node : " + str(node)
+		dictio = current_node[1]
+		#print "dictio : " + str(dictio)		
+		for node2 in dictio:
 			number_edges += 1
-			sum += spl[node1][node2]
+			sum += dictio[node2]
+		current_node = next(spl, None)
+		if current_node is None:
+			flag = False
 	average = sum / number_edges
 	return average
 
@@ -77,24 +90,28 @@ def degree_log(graph):
 	plt.xlabel("degree")
 
 	# draw graph in inset
-	plt.axes([0.45,0.45,0.45,0.45])
-	Gcc = sorted(nx.connected_component_subgraphs(graph), key = len, reverse=True)[0]
-	pos = nx.spring_layout(Gcc)
-	plt.axis('off')
-	nx.draw_networkx_nodes(Gcc,pos,node_size=20)
-	nx.draw_networkx_edges(Gcc,pos,alpha=0.4)
+	# plt.axes([0.45,0.45,0.45,0.45])
+	
 
 	plt.savefig("degree_histogram.png")
 	plt.show()
 
+def communities(G):
+	partition = community.best_partition(G)
+	float(len(set(partition.values())))
+	list_modularity = list()
+	for part in set(partition.values()):
+		list_modularity.append(community.modularity(part, G))
+	return sorted(list_modularity)[10]
+
 def centrality_degree(G):
 	degree_centrality = sorted(nx.degree_centrality(G).values(), reverse=True)
-	pagerank = nx.pagerank(G)
 	plt.loglog(degree_centrality,'b-',marker='o')
 	plt.title("Distribution of nodes centrality")
 	plt.ylabel("fraction")
 	plt.xlabel("centrality")
 	plt.savefig("centrality_nodes_histogram.png")
+	plt.savefig("centrality.png")
 	plt.show()
 	print "degree centrality : " + str(degree_centrality)
 
@@ -119,14 +136,52 @@ def eigenvector_centrality(G):
 	plt.bar(list(eigenvector_centrality.keys()), list(eigenvector_centrality.values()), color='g')
 	plt.show()
 
+def pagerank(G):
+	pagerank = nx.pagerank(G)
+	print pagerank
+	print "best nodes : " + str(sorted(pagerank.values(), reverse=True)[:5])
+	plt.bar(list(pagerank.keys()), list(pagerank.values()), color='g')
+	plt.show()
+
+def clustering(G):
+	clustering_coeff = nx.average_clustering(G)
+	print "clustering coeff : " + str(clustering_coeff)
+
+def local_clustering(G):
+	Y = nx.Graph()
+	for u,v,data in G.edges(data=True):
+		w = data['weight'] if 'weight' in data else 1.0
+	if Y.has_edge(u,v):
+		Y[u][v]['weight'] += w
+	else:
+		Y.add_edge(u, v, weight=w)
+	local_clustering = sorted(nx.clustering(Y).values(), reverse=True)
+	dmax=max(local_clustering)
+
+	plt.loglog(local_clustering,'b-',marker='o')
+	plt.title("Distribution of clustering(log)")
+	plt.ylabel("fraction")
+	plt.xlabel("degree")
+
+	# draw graph in inset
+	#plt.savefig("degree_histogram.png")
+	plt.show()
 
 graph = create_graph()
+graph = graph.to_undirected()
 #plot_graph(graph)
-#print "compute_average_path : " + str(compute_average_path(graph))
+#print "compute_average_path : " + str(compute_average_path(graph)) # result : 3
 #print "degree_distribution : " + str(degree_distribution(graph))
 #degree_log(graph)
+#print communities(graph) : 268 communities, but with 2 particular ones
 #centrality_degree(graph)
 #closeness_centrality(graph)
 #betweeness_centrality(graph)
-eigenvector_centrality(graph)
+#eigenvector_centrality(graph)
+#pagerank(graph)
+#clustering(graph)
+#local_clustering(graph)
+#print "number of edges : " + str(len(graph.node))
 
+# TODO : components, clustering
+# dataset on political bloggers, analyse the discussion between both liberal and conservative party
